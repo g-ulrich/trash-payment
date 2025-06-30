@@ -11,43 +11,34 @@ const ADD_TO_CART_BUTTON_SELECTOR = '.addButtonCart';
 const CHECKOUT_BUTTON_SELECTOR = 'button.btn.btn-primary[name="submit"][value="Checkout"]';
 const CHECKOUT_PAGE_URL = "https://paylocalgov.com/BillPresentment/Home/Checkout?refferer=ToCheckout";
 const REVIEW_PAGE_URL = "https://paylocalgov.com/BillPresentment/Home/BpReviewPayment?SelectedPaymentMethod=BillMeLater&SignedUpforPaperlessBill=False&IsFuturePay=False"
-
+const discord = new Discord();
 const MAX_RETRIES = 5;
 
 async function runAutomation() {
-  const discord = new Discord();
+  discord.sendMessage("```bash\n[INFO] ${new Date()}\n     - Starting monthly trash bill script.\n```");
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
 
-  const input = async (page, id, text) => {
-      await page.click(id);
-      await page.type(id, text);
-    }
-
-    // const select = async (page, id, text) => {
-    //   // Select option by visible text
-    //   // await page.click(id);
-    //   await page.select(id, text);
-    // }
-
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      discord.sendMessage(`Attempt ${attempt} starting...`);
+      discord.sendMessage(`[INFO] Attempt number: *${attempt}/${MAX_RETRIES}* starting...`);
       // Navigate to the target page
       await page.goto(TARGET_URL, { waitUntil: 'networkidle2' });
       await page.click(SEARCH_INPUT_SELECTOR); // Select all text if any
       await page.type(SEARCH_INPUT_SELECTOR, SEARCH_INPUT_VALUE);
-      discord.sendMessage(`Searching for account...`);
+      discord.sendMessage(`[INFO] Searching for trash account & clicking button...`);
       // Click the search button
       await page.click(SEARCH_BUTTON_SELECTOR);
       // Wait for the results grid to load
+       discord.sendMessage(`[INFO] Waiting for grid to show account...`);
       await page.waitForSelector(RESULTS_GRID_SELECTOR, { visible: true, timeout: 10000 });
-      discord.sendMessage(`[INFO] Grid is visible...`);
+     discord.sendMessage(`[INFO] Clicking add to cart button...`);
       // // Click the add to cart button in the row
       await page.click(ADD_TO_CART_BUTTON_SELECTOR);
-       discord.sendMessage(`[INFO] Clicking checkout...`);
       // Wait for the checkout button to appear and click it
+      discord.sendMessage(`[INFO] Waiting fro checkout button to appear...`);
       await page.waitForSelector(CHECKOUT_BUTTON_SELECTOR, { visible: true, timeout: 10000 });
+      discord.sendMessage(`[INFO] Clicking checkout button...`);
       await page.click(CHECKOUT_BUTTON_SELECTOR);
       discord.sendMessage(`[INFO] Waiting for checkout page to load...`);
       // Wait for navigation to checkout page
@@ -59,7 +50,7 @@ async function runAutomation() {
         discord.sendMessage(`[ERROR] Did not reach checkout page, current URL: ${currentURL}. Restarting...`);
         continue; // retry from beginning
       }
-      discord.sendMessage(`[INFO] Inputing checkout data...`);
+      discord.sendMessage(`[INFO] Inputing & selecting checkout data...`);
       await page.type("#Payer_FirstName", process.env.INPUT_FNAME);
       await page.type("#Payer_LastName", process.env.INPUT_UNAME);
       await page.type("#Payer_Address1", process.env.INPUT_ADDRESS);
@@ -74,8 +65,10 @@ async function runAutomation() {
       await page.select("#exp-year", process.env.SELECT_EXP_YR);
       await page.type("#Cvv", process.env.INPUT_CVV);
       discord.sendMessage(`[INFO] Finalizing payment...`);
+      discord.sendMessage(`[INFO] Clicking continue button...`);
       page.click("#next")
       // Wait for navigation to checkout page
+      discord.sendMessage(`[INFO] Waiting for 'review' page...`);
       await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 });
       // Verify URL is the checkout page URL
       discord.sendMessage(`[INFO] Verifying 'review' checkout page URL...`);
@@ -84,20 +77,19 @@ async function runAutomation() {
         discord.sendMessage(`[ERROR] Did not reach 'review' checkout page, current URL: ${currentReviewURL}. Restarting...`);
         continue; // retry from beginning
       }
-       discord.sendMessage(`[INFO] Submitting & finalizing payment...`);
+       discord.sendMessage(`[INFO] Clicking Submit button...`);
        page.click("#submitprocess");
-      discord.sendMessage(`[INFO] Waiting for receipt page...`);
+      discord.sendMessage(`[INFO] Waiting for receipt page to load...`);
       await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 });
-      
-     discord.sendMessage(`[INFO] Success your TRASH bill has been PAID! Check ${process.env.INPUT_EMAIL} for payment info...`);
+      discord.sendMessage("```bash\n[SUCCESS] "+new Date()+"\n    - Trash bill paid! Check "+process.env.INPUT_EMAIL+" for payment info.```");
       break;
 
     } catch (error) {
-      console.log(`Error on attempt ${attempt}:`, error);
+      discord.sendMessage(`[ERROR] Attempt number *${attempt}* failed because:` + "\n```bash\n"+ error + "\n```");
       if (attempt === MAX_RETRIES) {
-        console.log('Max retries reached. Exiting.');
+        discord.sendMessage(`[ERROR] Max retries reached. Exiting. Trying again next month.`);
       } else {
-        console.log('Retrying...');
+        discord.sendMessage(`[WARNING] Retrying script...`);
       }
     }
   }
@@ -106,5 +98,5 @@ async function runAutomation() {
 }
 
 runAutomation().catch(error => {
-  console.error('Fatal error in automation script:', error);
+  discord.sendMessage(`[ERROR] Fatal error in automation script:` + "\n```bash\n"+ error + "\n```");
 });
