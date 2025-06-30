@@ -16,7 +16,7 @@ const MAX_RETRIES = 5;
 
 async function runAutomation() {
   discord.sendMessage("```bash\n[INFO] ${new Date()}\n     - Starting monthly trash bill script.\n```");
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
