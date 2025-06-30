@@ -17,7 +17,7 @@ const MAX_RETRIES = 5;
 async function runAutomation() {
   discord.sendMessage("```bash\n[INFO] "+new Date()+"\n     - Starting monthly trash bill script.\n```");
   const browser = await puppeteer.launch({
-    headless: 'false', // or true
+    headless: false, // or true
     executablePath: '/usr/bin/chromium',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
@@ -27,7 +27,9 @@ async function runAutomation() {
     try {
       discord.sendMessage(`[INFO] Attempt number: *${attempt}/${MAX_RETRIES}* starting...`);
       // Navigate to the target page
-      await page.goto(TARGET_URL, { waitUntil: 'networkidle2' });
+      // await page.goto(TARGET_URL, { waitUntil: 'networkidle2' });
+      await page.goto(TARGET_URL, { waitUntil: 'domcontentloaded' });
+      await page.waitForSelector(SEARCH_INPUT_SELECTOR, { visible: true, timeout: 20000 });
       await page.click(SEARCH_INPUT_SELECTOR); // Select all text if any
       await page.type(SEARCH_INPUT_SELECTOR, SEARCH_INPUT_VALUE);
       discord.sendMessage(`[INFO] Searching for trash account & clicking button...`);
