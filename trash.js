@@ -15,9 +15,9 @@ const discord = new Discord();
 const MAX_RETRIES = 5;
 
 async function runAutomation() {
-  discord.sendMessage("```bash\n[INFO] ${new Date()}\n     - Starting monthly trash bill script.\n```");
+  discord.sendMessage("```bash\n[INFO] "+new Date()+"\n     - Starting monthly trash bill script.\n```");
   const browser = await puppeteer.launch({
-    headless: 'new', // or true
+    headless: 'false', // or true
     executablePath: '/usr/bin/chromium',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
